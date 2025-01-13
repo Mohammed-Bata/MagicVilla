@@ -174,6 +174,7 @@ namespace MagicVillaApi.Controllers
             return _response;
         }
         [HttpPut("{id:int}")]
+        
         public async Task<ActionResult<APIResponse>> Update(int id,[FromForm]VillaDto villadto)
         {
             try

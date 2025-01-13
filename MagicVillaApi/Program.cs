@@ -1,5 +1,6 @@
 using MagicVillaApi;
 using MagicVillaApi.Data;
+using MagicVillaApi.DbInitializer;
 using MagicVillaApi.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -23,6 +24,7 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     options.Password.RequiredLength = 6;
 }).AddEntityFrameworkStores<ApplicationDbContext>();
 builder.Services.AddAutoMapper(typeof(MappingConfig));
+builder.Services.AddScoped<DbInitializer>();
 builder.Services.AddScoped<VillaDAO>();
 builder.Services.AddScoped<ApplicationUserDAO>();
 
@@ -72,12 +74,22 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAuthentication();
 app.UseAuthorization();
-
+seedDatabase();
 app.MapControllers();
 ApplyMigrations();
 app.Run();
 
 
+
+
+void seedDatabase()
+{
+    using (var scope = app.Services.CreateScope())
+    {
+        var dbInitializer = scope.ServiceProvider.GetRequiredService<DbInitializer>();
+        dbInitializer.Initialize();
+    }
+}
 void ApplyMigrations()
 {
     using (var scope = app.Services.CreateScope())
@@ -89,3 +101,4 @@ void ApplyMigrations()
         }
     } 
 }
+
