@@ -22,15 +22,15 @@
                 <input asp-for="Details" class="form-control" />
                 <span asp-validation-for="Details" class="text-danger"></span>
             </div>
-            <div class="form-group">
+           @*  <div class="form-group">
                 <label asp-for="ImageUrl" class="ms-2"></label>
                 <input type="file" name="file" class="form-control" />
-            </div>
-           @*  <div class="form-group">
-                <label asp-for="ImageUrl" class="control-label"></label>
-                <input asp-for="ImageUrl" class="form-control" />
-                <span asp-validation-for="ImageUrl" class="text-danger"></span>
             </div> *@
+            <div class="form-group">
+                <input asp-for="Image" class="form-control"></input>
+                <input asp-for="ImageUrl" hidden class="form-control" />
+                <span asp-validation-for="Image" class="text-danger"></span>
+            </div>
             <div class="form-group">
                 <label asp-for="Occupancy" class="control-label"></label>
                 <input asp-for="Occupancy" class="form-control" />

@@ -19,7 +19,7 @@ namespace MagicVillaWeb.Controllers
         public async Task<IActionResult> Index()
         {
             List<VillaDto> list = new List<VillaDto>();
-            var response = await _villaService.GetAllAsync<APIResponse>(HttpContext.Session.GetString(SD.SessionToken));
+            var response = await _villaService.GetAllAsync<APIResponse>();
 
             if (response != null && response.IsSuccess)
             {

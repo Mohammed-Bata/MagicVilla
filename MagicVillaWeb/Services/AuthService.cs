@@ -1,34 +1,46 @@
-﻿using MagicVillaWeb.Models;
+﻿using Humanizer;
+using MagicVillaWeb.Models;
 using MagicVillaWeb.Models.Dtos;
 using static Utility.SD;
 
 namespace MagicVillaWeb.Services
 {
-    public class AuthService:BaseService
+    public class AuthService
     {
         private readonly IHttpClientFactory _httpClientFactory;
         private string villaUrl;
-        public AuthService(IHttpClientFactory clientFactory, IConfiguration configuration):base(clientFactory)
+        private readonly BaseService _baseService;
+        public AuthService(IHttpClientFactory clientFactory, IConfiguration configuration,BaseService baseService)
         {
             _httpClientFactory = clientFactory;
             villaUrl = configuration.GetValue<string>("ServiceUrls:VillaApi");
+            _baseService = baseService;
         }
-        public Task<T> LoginAsync<T>(LoginRequestDto dto)
+        public async Task<T> LoginAsync<T>(LoginRequestDto dto)
         {
-            return SendAsync<T>(new APIRequest()
+            return await _baseService.SendAsync<T>(new APIRequest()
             {
                 ApiType = ApiType.Post,
                 Data = dto,
                 Url = villaUrl + "/api/UserApi/Login",
-            });
+            },withBearer:false);
         }
-        public Task<T> RegisterAsync<T>(RegisterationRequestDto dto)
+        public async Task<T> RegisterAsync<T>(RegisterationRequestDto dto)
         {
-            return SendAsync<T>(new APIRequest()
+            return await _baseService.SendAsync<T>(new APIRequest()
             {
                 ApiType = ApiType.Post,
                 Data = dto,
                 Url = villaUrl + "/api/UserApi/Register",
+            },withBearer:false);
+        }
+        public async Task<T> LogoutAsync<T>(TokenDto obj)
+        {
+            return await _baseService.SendAsync<T>(new APIRequest()
+            {
+                ApiType = ApiType.Post,
+                Data = obj,
+                Url = villaUrl + "/api/UserApi/Revoke",
             });
         }
     }

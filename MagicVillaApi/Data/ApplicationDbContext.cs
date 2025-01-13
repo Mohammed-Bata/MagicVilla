@@ -14,6 +14,7 @@ namespace MagicVillaApi.Data
         }
         public DbSet<ApplicationUser> Users {  get; set; }
         public DbSet<Villa> Villas { get; set; }
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelbuilder)
         {

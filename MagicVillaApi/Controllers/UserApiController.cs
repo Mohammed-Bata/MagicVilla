@@ -23,8 +23,8 @@ namespace MagicVillaApi.Controllers
         [HttpPost("Login")]
         public async Task<ActionResult<APIResponse>> Login(LoginRequestDto dto)
         {
-            var loginResponse = await _userDAO.Login(dto);
-            if(loginResponse.user == null || string.IsNullOrEmpty(loginResponse.token))
+            var tokenDto = await _userDAO.Login(dto);
+            if(tokenDto == null || string.IsNullOrEmpty(tokenDto.AccessToken))
             {
                 _response.StatusCode = HttpStatusCode.BadRequest;
                 _response.IsSuccess = false;
@@ -33,7 +33,7 @@ namespace MagicVillaApi.Controllers
             }
             _response.StatusCode = HttpStatusCode.OK;
             _response.IsSuccess = true;
-            _response.Result = loginResponse;
+            _response.Result = tokenDto;
             return Ok(_response);
         }
         [HttpPost("Register")]
@@ -59,5 +59,46 @@ namespace MagicVillaApi.Controllers
             _response.IsSuccess=true;
             return Ok(_response);
         }
+
+        [HttpPost("Refresh")]
+        public async Task<ActionResult<APIResponse>> GetNewTokenFromRefreshToken([FromBody]TokenDto tokenDto)
+        {
+            if(ModelState.IsValid)
+            {
+                var tokenResponse = await _userDAO.RefreshAccessToken(tokenDto);
+                if (tokenResponse==null || string.IsNullOrEmpty(tokenResponse.AccessToken))
+                {
+                    _response.StatusCode = HttpStatusCode.BadRequest;
+                    _response.IsSuccess = false;
+                    _response.Errors.Add("Token Invalid");
+                    return BadRequest(_response);
+                }
+                _response.StatusCode = HttpStatusCode.OK;
+                _response.IsSuccess = true;
+                _response.Result = tokenResponse;
+                return Ok(_response);
+            }
+            else
+            {
+                _response.IsSuccess = false;
+                _response.Result = "Invalid Input";
+                return BadRequest(_response);
+            }
+        }
+        [HttpPost("Revoke")]
+        public async Task<ActionResult<APIResponse>> RevokeRefreshToken([FromBody]TokenDto token)
+        {
+            if (ModelState.IsValid)
+            {
+                await _userDAO.RevokeRefreshToken(token);
+                _response.IsSuccess = true;
+                _response.StatusCode = HttpStatusCode.OK;
+                return Ok(_response);
+            }
+            _response.Result = "Invalid Input";
+            _response.IsSuccess = false;
+            return BadRequest(_response);
+        }
+
     }
 }

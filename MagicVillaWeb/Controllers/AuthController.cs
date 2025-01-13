@@ -15,11 +15,12 @@ namespace MagicVillaWeb.Controllers
     public class AuthController : Controller
     {
         private readonly AuthService _authService;
-        private readonly IMapper _mapper;
-        public AuthController(AuthService service,IMapper mapper)
+        private readonly TokenProviderService _tokenProviderService;
+        public AuthController(AuthService service, TokenProviderService tokenProviderService)
         {
             _authService = service;
-            _mapper = mapper;
+            _tokenProviderService = tokenProviderService;
+
         }
         [HttpGet]
         public IActionResult Login()
@@ -34,9 +35,9 @@ namespace MagicVillaWeb.Controllers
             APIResponse response = await _authService.LoginAsync<APIResponse>(dto);
             if(response != null && response.IsSuccess)
             {
-                LoginResponseDto model = JsonConvert.DeserializeObject<LoginResponseDto>(Convert.ToString(response.Result));
+                TokenDto model = JsonConvert.DeserializeObject<TokenDto>(Convert.ToString(response.Result));
                 var handler = new JwtSecurityTokenHandler();
-                var jwt = handler.ReadJwtToken(model.token);
+                var jwt = handler.ReadJwtToken(model.AccessToken);
 
                 var identity = new ClaimsIdentity(CookieAuthenticationDefaults.AuthenticationScheme);
                 identity.AddClaim(new Claim(ClaimTypes.Name, jwt.Claims.FirstOrDefault(u => u.Type == "unique_name").Value));
@@ -45,7 +46,7 @@ namespace MagicVillaWeb.Controllers
                 var principal = new ClaimsPrincipal(identity);
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
 
-                HttpContext.Session.SetString(SD.SessionToken,model.token);
+                _tokenProviderService.SetToken(model);
                 return RedirectToAction("Index", "Home");
             }
             else
@@ -74,7 +75,9 @@ namespace MagicVillaWeb.Controllers
         public async Task<IActionResult> Logout()
         {
             await HttpContext.SignOutAsync();
-            HttpContext.Session.SetString(SD.SessionToken, "");
+            var token = _tokenProviderService.GetToken();
+            await _authService.LogoutAsync<APIResponse>(token);
+            _tokenProviderService.ClearToken();
             return RedirectToAction("Index", "Home");
         }
 

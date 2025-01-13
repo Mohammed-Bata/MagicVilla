@@ -85,7 +85,7 @@ namespace MagicVillaApi.Controllers
         }
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
-        public async Task<ActionResult<APIResponse>> CreateVilla([FromBody]VillaDto villaDto)
+        public async Task<ActionResult<APIResponse>> CreateVilla([FromForm]VillaDto villaDto)
         {
             try
             {
@@ -103,6 +103,27 @@ namespace MagicVillaApi.Controllers
                 villa.CreatedAt = DateTime.Now;
                 await _villaDAO.CreateVilla(villa);
 
+                if(villaDto.Image != null)
+                {
+                    string filename = Guid.NewGuid().ToString() + Path.GetExtension(villaDto.Image.FileName);
+                    string imagepath = @"wwwroot\images\" + filename;
+                    var directoryLocation = Path.Combine(Directory.GetCurrentDirectory(), imagepath);
+
+                    FileInfo file = new FileInfo(directoryLocation);
+
+                    if (file.Exists)
+                    {
+                        file.Delete();
+                    }
+                    using (var filestream = new FileStream(directoryLocation, FileMode.Create))
+                    {
+                        await villaDto.Image.CopyToAsync(filestream);
+                    }
+                    var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}{HttpContext.Request.PathBase.Value}";
+                    villa.ImageUrl = baseUrl + "/images/" + filename;
+                    villa.ImageLocalPath = imagepath;
+                }
+                await _villaDAO.UpdateVilla(villa);
                 _response.Result = _mapper.Map<VillaDto>(villa);
                 _response.StatusCode=HttpStatusCode.Created;
 
@@ -130,6 +151,16 @@ namespace MagicVillaApi.Controllers
                 {
                     return NotFound();
                 }
+                if (!string.IsNullOrEmpty(villa.ImageLocalPath))
+                {
+                    var oldFilePathDirectory = Path.Combine(Directory.GetCurrentDirectory(), villa.ImageLocalPath);
+                    FileInfo file = new FileInfo(oldFilePathDirectory);
+
+                    if (file.Exists)
+                    {
+                        file.Delete();
+                    }
+                }
                 await _villaDAO.DeleteVilla(villa);
                 _response.StatusCode =HttpStatusCode.NoContent;
                 return Ok(_response);
@@ -143,7 +174,7 @@ namespace MagicVillaApi.Controllers
             return _response;
         }
         [HttpPut("{id:int}")]
-        public async Task<ActionResult<APIResponse>> Update(int id,VillaDto villadto)
+        public async Task<ActionResult<APIResponse>> Update(int id,[FromForm]VillaDto villadto)
         {
             try
             {
@@ -164,6 +195,36 @@ namespace MagicVillaApi.Controllers
                     return NotFound();
                 }
                 villa = _mapper.Map<Villa>(villadto);
+
+                if (villadto.Image != null)
+                {
+                    if (!string.IsNullOrEmpty(villa.ImageLocalPath))
+                    {
+                        var oldFilePathDirectory = Path.Combine(Directory.GetCurrentDirectory(), villa.ImageLocalPath);
+                        FileInfo file = new FileInfo(oldFilePathDirectory);
+
+                        if (file.Exists)
+                        {
+                            file.Delete();
+                        }
+                    }
+
+                    string filename = Guid.NewGuid().ToString() + Path.GetExtension(villadto.Image.FileName);
+                    string imagepath = @"wwwroot\images\" + filename;
+                    var directoryLocation = Path.Combine(Directory.GetCurrentDirectory(), imagepath);
+
+      
+                    using (var filestream = new FileStream(directoryLocation, FileMode.Create))
+                    {
+                        await villadto.Image.CopyToAsync(filestream);
+                    }
+
+                    var baseUrl = $"{HttpContext.Request.Scheme}://{HttpContext.Request.Host.Value}{HttpContext.Request.PathBase.Value}";
+                    villa.ImageUrl = baseUrl + "/images/" + filename;
+                    villa.ImageLocalPath = imagepath;
+
+                }
+
                 villa.CreatedAt = create;
                 villa.UpdatedAt = DateTime.Now;
                 await _villaDAO.UpdateVilla(villa);
